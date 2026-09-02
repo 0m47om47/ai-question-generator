@@ -1,0 +1,226 @@
+{
+  "totalQuestions": 17,
+  "questions": [
+    {
+      "id": 1,
+      "type": "city",
+      "city": "Thane",
+      "items": [
+        "How many major lakes are officially recognized within Thane city limits?",
+        "25",
+        "30",
+        "35",
+        "40"
+      ],
+      "answer": "35"
+    },
+    {
+      "id": 2,
+      "type": "city",
+      "city": "Dumka",
+      "items": [
+        "How many subdivisions (Anumandal) are there in Dumka district?",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "1"
+    },
+    {
+      "id": 3,
+      "type": "city",
+      "city": "Dhanbad",
+      "items": [
+        "In which year was the Indian School of Mines (ISM) Dhanbad established?",
+        "1926",
+        "1930",
+        "1935",
+        "1940"
+      ],
+      "answer": "1926"
+    },
+    {
+      "id": 4,
+      "type": "city",
+      "city": "Godda",
+      "items": [
+        "How many revenue circles are managed under the Godda district?",
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "answer": "9"
+    },
+    {
+      "id": 5,
+      "type": "city",
+      "city": "Deoghar",
+      "items": [
+        "How many main entry gates (Darwaza) are in the Baidyanath Temple complex?",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "1"
+    },
+    {
+      "id": 6,
+      "type": "city",
+      "city": "Jamtara",
+      "items": [
+        "How many administrative blocks are currently in the Jamtara district?",
+        "4",
+        "5",
+        "6",
+        "8"
+      ],
+      "answer": "6"
+    },
+    {
+      "id": 7,
+      "type": "city",
+      "city": "Bhagalpur",
+      "items": [
+        "In which year was the Bhagalpur University (TMBU) established?",
+        "1955",
+        "1960",
+        "1965",
+        "1970"
+      ],
+      "answer": "1960"
+    },
+    {
+      "id": 8,
+      "type": "city",
+      "city": "Rampurhat",
+      "items": [
+        "How many platforms are currently active at Rampurhat Junction station?",
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "answer": "6"
+    },
+    {
+      "id": 9,
+      "type": "city",
+      "city": "Pakur",
+      "items": [
+        "What is the average elevation of Pakur district above sea level (in meters)?",
+        "15",
+        "25",
+        "32",
+        "45"
+      ],
+      "answer": "15"
+    },
+    {
+      "id": 10,
+      "type": "city",
+      "city": "Sahibganj",
+      "items": [
+        "How many subdivisions are there in Sahibganj district?",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "3"
+    },
+    {
+      "id": 11,
+      "type": "category",
+      "category": "TV",
+      "items": [
+        "How many sisters-in-law did Nimki have in her marital home initially?",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "2"
+    },
+    {
+      "id": 14,
+      "type": "category",
+      "category": "General Knowledge",
+      "items": [
+        "How many countries currently claim portions of the Kashmir region?",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "3"
+    },
+    {
+      "id": 17,
+      "type": "category",
+      "category": "Science",
+      "items": [
+        "How many sepals are usually present in a standard Hibiscus flower?",
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "answer": "5"
+    },
+    {
+      "id": 20,
+      "type": "category",
+      "category": "Technology",
+      "items": [
+        "How many layers are typically in a basic neural network (Input, Hidden, Output)?",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "3"
+    },
+    {
+      "id": 23,
+      "type": "category",
+      "category": "History",
+      "items": [
+        "How many major nations formed the 'Triple Entente' in World War I?",
+        "3",
+        "2",
+        "4",
+        "5"
+      ],
+      "answer": "3"
+    },
+    {
+      "id": 26,
+      "type": "category",
+      "category": "Sports",
+      "items": [
+        "How many point(s) is an 'On-sight' climb worth in most local competitions?",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "1"
+    },
+    {
+      "id": 29,
+      "type": "category",
+      "category": "Geography",
+      "items": [
+        "How many major river islands are in the Brahmaputra river in India?",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": "2"
+    }
+  ]
+}

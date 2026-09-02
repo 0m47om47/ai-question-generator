@@ -1,0 +1,226 @@
+{
+  "totalQuestions": 17,
+  "questions": [
+    {
+      "id": 1,
+      "type": "city",
+      "city": "Thane",
+      "items": [
+        "Which famous beach is located near the Thane district coast?",
+        "Juhu Beach",
+        "Alibaug Beach",
+        "Versova Beach",
+        "Kelva Beach"
+      ],
+      "answer": "Kelva Beach"
+    },
+    {
+      "id": 2,
+      "type": "city",
+      "city": "Dumka",
+      "items": [
+        "Which mountain range is located near Dumka?",
+        "Vindhya Range",
+        "Lagwa Hills",
+        "Satpura Range",
+        "Himalayas"
+      ],
+      "answer": "Lagwa Hills"
+    },
+    {
+      "id": 3,
+      "type": "city",
+      "city": "Dhanbad",
+      "items": [
+        "Maithon Dam, located near Dhanbad, is built on which river?",
+        "Damodar",
+        "Ganga",
+        "Barakar",
+        "Subarnarekha"
+      ],
+      "answer": "Barakar"
+    },
+    {
+      "id": 4,
+      "type": "city",
+      "city": "Godda",
+      "items": [
+        "Which famous yoga center is located in the Godda district?",
+        "Yoga Nagari Pathargama",
+        "Rishikesh Center",
+        "Munger Yoga School",
+        "Isha Foundation"
+      ],
+      "answer": "Yoga Nagari Pathargama"
+    },
+    {
+      "id": 5,
+      "type": "city",
+      "city": "Deoghar",
+      "items": [
+        "Which of these is a famous hill station/tourist spot in Deoghar?",
+        "Netarhat",
+        "Parasnath",
+        "Trikut Pahar",
+        "Dalma Hills"
+      ],
+      "answer": "Trikut Pahar"
+    },
+    {
+      "id": 6,
+      "type": "city",
+      "city": "Jamtara",
+      "items": [
+        "Jamtara district was created by separating from which district in 2001?",
+        "Ranchi",
+        "Bokaro",
+        "Dumka",
+        "Godda"
+      ],
+      "answer": "Dumka"
+    },
+    {
+      "id": 7,
+      "type": "city",
+      "city": "Bhagalpur",
+      "items": [
+        "Which fruit from Bhagalpur has received the GI (Geographical Indication) tag?",
+        "Shahi Litchi",
+        "Jardalu Mango",
+        "Alphonso Mango",
+        "Malda Mango"
+      ],
+      "answer": "Jardalu Mango"
+    },
+    {
+      "id": 8,
+      "type": "city",
+      "city": "Rampurhat",
+      "items": [
+        "Rampurhat is a major town in which district of West Bengal?",
+        "Birbhum",
+        "Malda",
+        "Bankura",
+        "Purulia"
+      ],
+      "answer": "Birbhum"
+    },
+    {
+      "id": 9,
+      "type": "city",
+      "city": "Pakur",
+      "items": [
+        "Which tribal community has a significant population in Pakur?",
+        "Santhal",
+        "Bhil",
+        "Gond",
+        "Munda"
+      ],
+      "answer": "Santhal"
+    },
+    {
+      "id": 10,
+      "type": "city",
+      "city": "Sahibganj",
+      "items": [
+        "Which of these is a historical monument in Sahibganj?",
+        "Golghar",
+        "Red Fort",
+        "Buland Darwaza",
+        "Akbari Mosque"
+      ],
+      "answer": "Akbari Mosque"
+    },
+    {
+      "id": 13,
+      "type": "category",
+      "category": "TV",
+      "items": [
+        "Which TV producer is known for creating the 'Naagin' franchise?",
+        "Ekta Kapoor",
+        "Gul Khan",
+        "Rajan Shahi",
+        "Siddharth Tewary"
+      ],
+      "answer": "Ekta Kapoor"
+    },
+    {
+      "id": 16,
+      "type": "category",
+      "category": "General Knowledge",
+      "items": [
+        "Which of these sea giants is actually a fish, not a mammal?",
+        "Dolphin",
+        "Humpback Whale",
+        "Whale Shark",
+        "Manatee"
+      ],
+      "answer": "Whale Shark"
+    },
+    {
+      "id": 19,
+      "type": "category",
+      "category": "Science",
+      "items": [
+        "Which fluid is found inside the cell membrane?",
+        "Cytoplasm",
+        "Blood",
+        "Water",
+        "Sap"
+      ],
+      "answer": "Cytoplasm"
+    },
+    {
+      "id": 22,
+      "type": "category",
+      "category": "Technology",
+      "items": [
+        "What is the smallest unit of data in a computer?",
+        "Byte",
+        "Bit",
+        "Kilobyte",
+        "Megabyte"
+      ],
+      "answer": "Bit"
+    },
+    {
+      "id": 25,
+      "type": "category",
+      "category": "History",
+      "items": [
+        "What is the formal playing time of the full version of the National Anthem?",
+        "52 seconds",
+        "60 seconds",
+        "45 seconds",
+        "90 seconds"
+      ],
+      "answer": "52 seconds"
+    },
+    {
+      "id": 28,
+      "type": "category",
+      "category": "Sports",
+      "items": [
+        "What is the length of a 'Short Course' swimming pool?",
+        "50 meters",
+        "25 meters",
+        "100 meters",
+        "10 meters"
+      ],
+      "answer": "25 meters"
+    },
+    {
+      "id": 31,
+      "type": "category",
+      "category": "Geography",
+      "items": [
+        "Human Geography primarily focuses on the relationship between people and ______?",
+        "Other planets",
+        "Computers",
+        "Environment/Space",
+        "Historical wars"
+      ],
+      "answer": "Environment/Space"
+    }
+  ]
+}

@@ -1,0 +1,260 @@
+{
+  "totalQuestions": 17,
+  "questions": [
+    {
+      "id": 1,
+      "type": "city",
+      "city": "Thane",
+      "items": [
+        "Which major National Park has a portion located near Thane city?",
+        {
+          "text": "Sanjay Gandhi National Park"
+        },
+        {
+          "text": "Tadoba National Park"
+        }
+      ],
+      "answer": "Sanjay Gandhi National Park"
+    },
+    {
+      "id": 2,
+      "type": "city",
+      "city": "Dumka",
+      "items": [
+        "Which famous fair is held every year in Dumka?",
+        {
+          "text": "Poush Mela"
+        },
+        {
+          "text": "Hijla Mela"
+        }
+      ],
+      "answer": "Hijla Mela"
+    },
+    {
+      "id": 3,
+      "type": "city",
+      "city": "Dhanbad",
+      "items": [
+        "Which famous dam in Dhanbad district is built on the Barakar River?",
+        {
+          "text": "Hirakud Dam"
+        },
+        {
+          "text": "Maithon Dam"
+        }
+      ],
+      "answer": "Maithon Dam"
+    },
+    {
+      "id": 4,
+      "type": "city",
+      "city": "Godda",
+      "items": [
+        "Godda district is a part of which division of Jharkhand?",
+        {
+          "text": "Santhal Pargana"
+        },
+        {
+          "text": "Palamu"
+        }
+      ],
+      "answer": "Santhal Pargana"
+    },
+    {
+      "id": 5,
+      "type": "city",
+      "city": "Deoghar",
+      "items": [
+        "Apart from the Baidyanath Temple, which beautiful mountain is located in Deoghar?",
+        {
+          "text": "Trikut Pahar"
+        },
+        {
+          "text": "Parasnath Pahar"
+        }
+      ],
+      "answer": "Trikut Pahar"
+    },
+    {
+      "id": 6,
+      "type": "city",
+      "city": "Jamtara",
+      "items": [
+        "From which old district was Jamtara carved out to be formed in 2001?",
+        {
+          "text": "Dumka"
+        },
+        {
+          "text": "Ranchi"
+        }
+      ],
+      "answer": "Dumka"
+    },
+    {
+      "id": 7,
+      "type": "city",
+      "city": "Bhagalpur",
+      "items": [
+        "Which world-famous silk is produced in Bhagalpur?",
+        {
+          "text": "Banarasi Silk"
+        },
+        {
+          "text": "Tussar Silk"
+        }
+      ],
+      "answer": "Tussar Silk"
+    },
+    {
+      "id": 8,
+      "type": "city",
+      "city": "Rampurhat",
+      "items": [
+        "Rampurhat Junction is an important railway station in which state?",
+        {
+          "text": "West Bengal"
+        },
+        {
+          "text": "Odisha"
+        }
+      ],
+      "answer": "West Bengal"
+    },
+    {
+      "id": 9,
+      "type": "city",
+      "city": "Pakur",
+      "items": [
+        "For the production of which item is Pakur district known across the country?",
+        {
+          "text": "Cotton"
+        },
+        {
+          "text": "Stone Chips and Black Stone"
+        }
+      ],
+      "answer": "Stone Chips and Black Stone"
+    },
+    {
+      "id": 10,
+      "type": "city",
+      "city": "Sahibganj",
+      "items": [
+        "What type of fossils are the Rajmahal Hills in Sahibganj famous for?",
+        {
+          "text": "Plant Fossils"
+        },
+        {
+          "text": "Dinosaur Fossils"
+        }
+      ],
+      "answer": "Plant Fossils"
+    },
+    {
+      "id": 13,
+      "type": "category",
+      "category": "TV",
+      "items": [
+        "What is the name of Anupamaa's youngest son?",
+        {
+          "text": "Paritosh"
+        },
+        {
+          "text": "Samar"
+        }
+      ],
+      "answer": "Samar"
+    },
+    {
+      "id": 16,
+      "type": "category",
+      "category": "General Knowledge",
+      "items": [
+        "Where are major LNG terminals located in India?",
+        {
+          "text": "Dahej and Kochi"
+        },
+        {
+          "text": "Shimla and Delhi"
+        }
+      ],
+      "answer": "Dahej and Kochi"
+    },
+    {
+      "id": 19,
+      "type": "category",
+      "category": "Science",
+      "items": [
+        "What metal is the filament of an electric bulb made of?",
+        {
+          "text": "Copper"
+        },
+        {
+          "text": "Tungsten"
+        }
+      ],
+      "answer": "Tungsten"
+    },
+    {
+      "id": 22,
+      "type": "category",
+      "category": "Technology",
+      "items": [
+        "Which of these methods makes an account significantly more secure?",
+        {
+          "text": "Two-Factor Authentication"
+        },
+        {
+          "text": "Using a weak password"
+        }
+      ],
+      "answer": "Two-Factor Authentication"
+    },
+    {
+      "id": 25,
+      "type": "category",
+      "category": "History",
+      "items": [
+        "Which alliance group was established during the Cold War?",
+        {
+          "text": "World War 1 Group"
+        },
+        {
+          "text": "NATO"
+        }
+      ],
+      "answer": "NATO"
+    },
+    {
+      "id": 28,
+      "type": "category",
+      "category": "Sports",
+      "items": [
+        "How many points are required to win a standard game of Badminton?",
+        {
+          "text": "11 Points"
+        },
+        {
+          "text": "21 Points"
+        }
+      ],
+      "answer": "21 Points"
+    },
+    {
+      "id": 31,
+      "type": "category",
+      "category": "Geography",
+      "items": [
+        "What is a person who makes maps called?",
+        {
+          "text": "Cartographer"
+        },
+        {
+          "text": "Photographer"
+        }
+      ],
+      "answer": "Cartographer"
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+{
+  "totalQuestions": 17,
+  "questions": [
+    {
+      "id": 1,
+      "type": "city",
+      "city": "Thane",
+      "items": [
+        "Thane is part of which metropolitan region?",
+        "Mumbai Metropolitan Region",
+        "Delhi NCR"
+      ],
+      "answer": "Delhi NCR"
+    },
+    {
+      "id": 2,
+      "type": "city",
+      "city": "Dumka",
+      "items": [
+        "Dumka is located in which division?",
+        "Santhal Pargana",
+        "South Chotanagpur"
+      ],
+      "answer": "South Chotanagpur"
+    },
+    {
+      "id": 3,
+      "type": "city",
+      "city": "Dhanbad",
+      "items": [
+        "Dhanbad is associated with which industry?",
+        "Coal Mining",
+        "Textile"
+      ],
+      "answer": "Textile"
+    },
+    {
+      "id": 4,
+      "type": "city",
+      "city": "Godda",
+      "items": [
+        "Godda is home to which major project?",
+        "Adani Power Plant",
+        "Metro Rail"
+      ],
+      "answer": "Metro Rail"
+    },
+    {
+      "id": 5,
+      "type": "city",
+      "city": "Deoghar",
+      "items": [
+        "Deoghar is famous for which festival?",
+        "Shravani Mela",
+        "Holi Festival"
+      ],
+      "answer": "Holi Festival"
+    },
+    {
+      "id": 6,
+      "type": "city",
+      "city": "Jamtara",
+      "items": [
+        "Jamtara gained notoriety for which activity?",
+        "Cyber Crime",
+        "Agriculture"
+      ],
+      "answer": "Agriculture"
+    },
+    {
+      "id": 7,
+      "type": "city",
+      "city": "Bhagalpur",
+      "items": [
+        "Bhagalpur is known for which product?",
+        "Silk",
+        "Tea"
+      ],
+      "answer": "Tea"
+    },
+    {
+      "id": 8,
+      "type": "city",
+      "city": "Rampurhat",
+      "items": [
+        "Rampurhat is near which famous place?",
+        "Tarapith",
+        "Darjeeling"
+      ],
+      "answer": "Darjeeling"
+    },
+    {
+      "id": 9,
+      "type": "city",
+      "city": "Pakur",
+      "items": [
+        "Pakur is known for which stone?",
+        "Black Stone",
+        "Marble"
+      ],
+      "answer": "Marble"
+    },
+    {
+      "id": 10,
+      "type": "city",
+      "city": "Sahibganj",
+      "items": [
+        "Sahibganj lies along which river?",
+        "Ganga",
+        "Yamuna"
+      ],
+      "answer": "Yamuna"
+    },
+    {
+      "id": 11,
+      "type": "category",
+      "category": "TV",
+      "items": [
+        "Sajan Agarwal in 'May I come in Madam' works in?",
+        "IT Sector",
+        "Advertising Agency"
+      ],
+      "answer": "IT Sector"
+    },
+    {
+      "id": 14,
+      "type": "category",
+      "category": "General Knowledge",
+      "items": [
+        "Ethanol blending reduces the emission of?",
+        "Oxygen",
+        "Carbon Monoxide"
+      ],
+      "answer": "Oxygen"
+    },
+    {
+      "id": 17,
+      "type": "category",
+      "category": "Science",
+      "items": [
+        "The acceleration due to gravity on Earth is?",
+        "9.8 m/s²",
+        "100 m/s²"
+      ],
+      "answer": "100 m/s²"
+    },
+    {
+      "id": 20,
+      "type": "category",
+      "category": "Technology",
+      "items": [
+        "Which is the core part of an operating system?",
+        "User Interface",
+        "Kernel"
+      ],
+      "answer": "User Interface"
+    },
+    {
+      "id": 23,
+      "type": "category",
+      "category": "History",
+      "items": [
+        "Indus Valley Civilization was located in which region?",
+        "Europe",
+        "South Asia"
+      ],
+      "answer": "Europe"
+    },
+    {
+      "id": 26,
+      "type": "category",
+      "category": "Sports",
+      "items": [
+        "Surfing requires a paddle to move on waves?",
+        "No",
+        "Yes"
+      ],
+      "answer": "Yes"
+    },
+    {
+      "id": 29,
+      "type": "category",
+      "category": "Geography",
+      "items": [
+        "Earth's magnetic field is generated in the?",
+        "Outer Core",
+        "Crust"
+      ],
+      "answer": "Crust"
+    }
+  ]
+}
