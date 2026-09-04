@@ -34,7 +34,7 @@ from config import (
 from services.ai_generator import generate_batch
 from services.validator import validate_question, validate_slot, to_game_format
 from services.duplicate_checker import DuplicateChecker
-from services.question_saver import get_next_question_id, save_question
+from services.question_saver import get_next_question_id, save_questions_batch
 
 load_dotenv()
 
@@ -152,6 +152,7 @@ def run_pipeline(
         rejected_dup_count = 0
         api_failure_count = 0
         accepted_embeddings = []       # (embedding_vector, question_text)
+        accepted_game_docs = []        # collected in memory, saved as ONE doc at end
         rejected_topics: dict[tuple[str, str], list[str]] = {}  # slot → rejected texts
         request_num = 0
         consecutive_503 = 0
@@ -245,9 +246,12 @@ def run_pipeline(
                 if dup_result["is_duplicate"]:
                     score = dup_result["best_score"]
                     rejected_dup_count += 1
-                    # Track rejected topic so next retry uses a different fact
                     rejected_topics.setdefault(slot_key, []).append(q_text)
-                    print(f"    ✗ {label} — duplicate (score={score:.3f}): {q_text[:55]}")
+                    matched_q = dup_result["matches"][0]["question"] if dup_result["matches"] else "?"
+                    print(f"    ❌ Duplicate")
+                    print(f"       Generated: {q_text}")
+                    print(f"       Existing : {matched_q}")
+                    print(f"       Score    : {score:.3f}")
                     rejected_slots.append(slot_key)
                     continue
 
@@ -262,7 +266,10 @@ def run_pipeline(
                     if sim >= SIMILARITY_THRESHOLD:
                         rejected_dup_count += 1
                         rejected_topics.setdefault(slot_key, []).append(q_text)
-                        print(f"    ✗ {label} — batch dup (sim={sim:.3f}): {q_text[:55]}")
+                        print(f"    ❌ Duplicate (within batch)")
+                        print(f"       Generated: {q_text}")
+                        print(f"       Existing : {prev_q}")
+                        print(f"       Score    : {sim:.3f}")
                         is_batch_dup = True
                         break
                 if is_batch_dup:
@@ -270,18 +277,17 @@ def run_pipeline(
                     continue
 
                 # ── Accepted! ──
-                if not dry_run:
-                    save_result = save_question(db, emb_model, game, game_doc)
-                    doc_id = save_result.get("game_doc_id", "?")
-                    print(f"    ✓ {label} — saved (id={next_id}, doc={doc_id}): {q_text[:55]}")
-                else:
-                    print(f"    ✓ {label} — (dry-run): {q_text[:55]}")
-
+                accepted_game_docs.append(game_doc)
                 accepted_embeddings.append((new_emb, q_text))
                 existing_qtexts.append(q_text)
                 accepted_slots.append(slot_key)
                 next_id += 1
                 accepted_this_run += 1
+
+                if dry_run:
+                    print(f"    ✓ {label} — accepted (dry-run, id={game_doc['id']}): {q_text[:55]}")
+                else:
+                    print(f"    ✓ {label} — accepted (id={game_doc['id']}): {q_text[:55]}")
 
             # ── Update pending = remove accepted ──
             pending_slots = [s for s in pending_slots if s not in accepted_slots]
@@ -299,6 +305,19 @@ def run_pipeline(
 
             if pending_slots:
                 time.sleep(1)
+
+        # ── Save all accepted questions as ONE document ──
+        if accepted_game_docs and not dry_run:
+            print(f"\n  Saving {len(accepted_game_docs)} accepted questions as ONE document …")
+            save_result = save_questions_batch(db, emb_model, game, accepted_game_docs)
+            doc_id = save_result["game_doc_id"]
+            print(f"  ✓ Saved! Document ID: {doc_id}")
+            print(f"    totalQuestions: {save_result['count']}")
+            print(f"    Embeddings created: {len(save_result['embedding_doc_ids'])}")
+        elif accepted_game_docs and dry_run:
+            print(f"\n  (dry-run) Would save {len(accepted_game_docs)} questions as ONE document")
+        else:
+            print(f"\n  No questions accepted for {game}.")
 
         # ── Game summary ──
         grand_totals[game] = {
