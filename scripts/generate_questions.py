@@ -32,6 +32,7 @@ from config import (
     EMBEDDINGS_COLLECTION,
 )
 from services.ai_generator import generate_batch
+from services.tavily_search import research_slots
 from services.validator import validate_question, validate_slot, to_game_format
 from services.duplicate_checker import DuplicateChecker
 from services.question_saver import get_next_question_id, save_questions_batch
@@ -154,6 +155,7 @@ def run_pipeline(
         accepted_embeddings = []       # (embedding_vector, question_text)
         accepted_game_docs = []        # collected in memory, saved as ONE doc at end
         rejected_topics: dict[tuple[str, str], list[str]] = {}  # slot → rejected texts
+        used_search_topics: dict[tuple[str, str], list[str]] = {}  # track Tavily topic diversity
         request_num = 0
         consecutive_503 = 0
 
@@ -162,15 +164,27 @@ def run_pipeline(
                 break
 
             request_num += 1
-            print(f"\n  LLM Request #{request_num}")
-            print(f"  Requested: {len(pending_slots)} slots")
+            print(f"\n  Request #{request_num}")
+            print(f"  Pending: {len(pending_slots)} slots")
 
-            # ── Call Gemini ──
+            # ── Step 1: Tavily Research ──
+            print(f"\n  ── Tavily Research ──")
+            research_context = research_slots(
+                slots=pending_slots,
+                rejected_topics=rejected_topics,
+                used_search_topics=used_search_topics,
+            )
+            researched_count = len(research_context)
+            print(f"  Researched: {researched_count}/{len(pending_slots)} slots")
+
+            # ── Step 2: Gemini Generation ──
+            print(f"\n  ── Gemini Generation ──")
             batch = generate_batch(
                 game=game,
                 slots=pending_slots,
                 existing_questions=existing_qtexts,
                 rejected_topics=rejected_topics,
+                research_context=research_context,
                 model_name=GEMINI_MODEL,
             )
 

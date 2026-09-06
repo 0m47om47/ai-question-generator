@@ -2,9 +2,9 @@
 AI Question Generator — batch-generates questions for missing slots
 using Gemini with structured JSON output.
 
-ONE LLM call per game (ideal case). Follow-up calls only for
-missing / rejected / duplicate slots, with rejected topics passed
-to prevent regenerating the same fact.
+Integrates Tavily research context when available for more diverse,
+factually grounded questions. ONE LLM call per game (ideal case).
+Follow-up calls only for missing / rejected / duplicate slots.
 """
 
 import json
@@ -60,12 +60,30 @@ def _rejected_block(rejected_topics: dict[tuple[str, str], list[str]],
     return ""
 
 
+def _research_block(research_context: dict[tuple[str, str], str],
+                     slots: list[tuple[str, str]]) -> str:
+    """Build a prompt section with Tavily research context per slot."""
+    lines = []
+    for slot in slots:
+        context = research_context.get(slot)
+        if context:
+            stype, svalue = slot
+            # Trim each context to ~400 chars for prompt efficiency
+            trimmed = context[:400]
+            lines.append(f"\n  {stype}: {svalue} — WEB RESEARCH:")
+            lines.append(f"    {trimmed}")
+    if lines:
+        return "\nWEB RESEARCH CONTEXT (use these facts to create questions):\n" + "\n".join(lines) + "\n"
+    return ""
+
+
 # ── Quiz prompt ─────────────────────────────────────────────────────
 
 def _build_quiz_prompt(
     slots: list[tuple[str, str]],
     existing_questions: list[str],
     rejected_topics: dict[tuple[str, str], list[str]] | None = None,
+    research_context: dict[tuple[str, str], str] | None = None,
 ) -> str:
     existing_block = ""
     if existing_questions:
@@ -77,17 +95,19 @@ def _build_quiz_prompt(
         )
 
     rejected_block = _rejected_block(rejected_topics or {}, slots)
+    research_block = _research_block(research_context or {}, slots)
 
     return f"""Generate quiz questions for the following slots.
 
 SLOTS TO FILL:
 {_slots_description(slots)}
-
+{research_block}
 CRITICAL DIVERSITY RULES:
 - Generate EXACTLY one question per slot.
 - Every question must test a GENUINELY DIFFERENT fact, event, person, place, concept, or statistic.
 - For CITY slots: use a lesser-known or surprising fact about that city. Do NOT ask about the most famous landmark, river, or industry that is likely already covered. Explore local culture, festivals, cuisine, wildlife, transportation, education, demographics, lesser-known places, or unique traditions.
 - For CATEGORY slots: vary the specific sub-topic within the category. If Science, don't always ask about physics — try chemistry, biology, astronomy, earth science, etc. If History, don't always ask about the same era or country.
+- If web research context is provided above, USE IT to create the question. Do not ignore the research.
 - Do NOT reuse the same core fact with different wording or options.
 - Do NOT change only the options while keeping the same question concept.
 - Each question must have exactly 4 text options and exactly 1 correct answer.
@@ -113,6 +133,7 @@ def _build_this_that_prompt(
     slots: list[tuple[str, str]],
     existing_questions: list[str],
     rejected_topics: dict[tuple[str, str], list[str]] | None = None,
+    research_context: dict[tuple[str, str], str] | None = None,
 ) -> str:
     existing_block = ""
     if existing_questions:
@@ -123,17 +144,19 @@ def _build_this_that_prompt(
         )
 
     rejected_block = _rejected_block(rejected_topics or {}, slots)
+    research_block = _research_block(research_context or {}, slots)
 
     return f"""Generate "This or That" questions for the following slots.
 
 SLOTS TO FILL:
 {_slots_description(slots)}
-
+{research_block}
 CRITICAL DIVERSITY RULES:
 - Generate EXACTLY one question per slot.
 - Every question must test a GENUINELY DIFFERENT fact from any existing question.
 - For CITY slots: use lesser-known facts. Explore culture, festivals, cuisine, wildlife, transport, education, demographics, traditions.
 - For CATEGORY slots: vary the specific sub-topic within the category.
+- If web research context is provided above, USE IT to create the question.
 - Do NOT reuse the same core fact with different wording.
 - Each question has exactly 2 text options and 1 correct answer.
 - The answer must exactly match one of the 2 options.
@@ -159,6 +182,7 @@ def _build_guess_number_prompt(
     slots: list[tuple[str, str]],
     existing_questions: list[str],
     rejected_topics: dict[tuple[str, str], list[str]] | None = None,
+    research_context: dict[tuple[str, str], str] | None = None,
 ) -> str:
     existing_block = ""
     if existing_questions:
@@ -169,17 +193,19 @@ def _build_guess_number_prompt(
         )
 
     rejected_block = _rejected_block(rejected_topics or {}, slots)
+    research_block = _research_block(research_context or {}, slots)
 
     return f"""Generate "Guess the Number" questions for the following slots.
 
 SLOTS TO FILL:
 {_slots_description(slots)}
-
+{research_block}
 CRITICAL DIVERSITY RULES:
 - Generate EXACTLY one question per slot.
 - Every question must test a GENUINELY DIFFERENT numerical fact.
 - For CITY slots: use diverse numerical facts — population, area, founding year, number of schools, distance to another city, elevation, number of wards, etc.
 - For CATEGORY slots: vary the specific sub-topic.
+- If web research context is provided above, USE IT to create the question.
 - Do NOT reuse the same core fact with different wording.
 - Each question asks about a number, year, count, distance, or quantity.
 - Each question has exactly 4 options (as strings) and 1 correct answer.
@@ -205,6 +231,7 @@ def _build_wrong_answer_prompt(
     slots: list[tuple[str, str]],
     existing_questions: list[str],
     rejected_topics: dict[tuple[str, str], list[str]] | None = None,
+    research_context: dict[tuple[str, str], str] | None = None,
 ) -> str:
     existing_block = ""
     if existing_questions:
@@ -215,17 +242,19 @@ def _build_wrong_answer_prompt(
         )
 
     rejected_block = _rejected_block(rejected_topics or {}, slots)
+    research_block = _research_block(research_context or {}, slots)
 
     return f"""Generate "Wrong Answer Only" questions for the following slots.
 
 SLOTS TO FILL:
 {_slots_description(slots)}
-
+{research_block}
 CRITICAL DIVERSITY RULES:
 - Generate EXACTLY one question per slot.
 - Every question must test a GENUINELY DIFFERENT fact from any existing question.
 - For CITY slots: use lesser-known facts. Explore culture, festivals, cuisine, wildlife, transport, education, demographics, traditions.
 - For CATEGORY slots: vary the specific sub-topic within the category.
+- If web research context is provided above, USE IT to create the question.
 - Do NOT reuse the same core fact with different wording.
 - Each question has exactly 2 items: one correct option and one plausible wrong option.
 - IMPORTANT: The "answer" field MUST be the WRONG option. This is the game mechanic.
@@ -259,6 +288,7 @@ def generate_batch(
     slots: list[tuple[str, str]],
     existing_questions: list[str] | None = None,
     rejected_topics: dict[tuple[str, str], list[str]] | None = None,
+    research_context: dict[tuple[str, str], str] | None = None,
     model_name: str = "gemini-3.6-flash",
 ) -> list[dict] | None:
     """
@@ -269,6 +299,7 @@ def generate_batch(
         slots:              List of (slot_type, slot_value) tuples to fill.
         existing_questions: Question texts already in the DB (for dedup guidance).
         rejected_topics:    Map of slot → list of rejected question texts.
+        research_context:   Tavily research results per slot.
         model_name:         Gemini model to use.
 
     Returns:
@@ -279,7 +310,7 @@ def generate_batch(
     if not builder:
         raise ValueError(f"Unknown game type: {game}")
 
-    prompt = builder(slots, existing_questions or [], rejected_topics)
+    prompt = builder(slots, existing_questions or [], rejected_topics, research_context)
     client = _get_client()
 
     try:
