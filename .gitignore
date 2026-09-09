@@ -5,6 +5,11 @@ venv/
 # Environment variables / secrets
 .env
 
+GEMINI.md
+GEMINI.md
+AGENTS.md
+GEMINI.md
+
 # Python cache
 __pycache__/
 *.pyc
