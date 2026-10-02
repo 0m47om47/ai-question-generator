@@ -14,11 +14,19 @@ Usage (as a module):
 import os
 from typing import Optional
 
+import numpy as np
 from sentence_transformers import SentenceTransformer
 
 
-# Default threshold — can be overridden via env or constructor
+# Atlas vector search retrieval threshold (over broad metadata vector)
 DEFAULT_SIMILARITY_THRESHOLD = 0.90
+
+# Pure question text thresholds (comparing just the question sentences, without metadata):
+# - >= 0.93: Definite duplicate (nearly identical wording/fact)
+# - >= 0.78: Potential duplicate requiring Gemini 2-stage verification
+# - < 0.78 : Completely different question (even if same city/game)
+PURE_DUP_THRESHOLD = 0.93
+PURE_VERIFY_THRESHOLD = 0.78
 
 EMBEDDINGS_COLLECTION = "question-embeddings"
 INDEX_NAME = "question_vector_index"
@@ -158,24 +166,58 @@ class DuplicateChecker:
         pipeline = [vector_search_stage, project_stage]
         results = list(self.collection.aggregate(pipeline))
 
-        # ── Classify matches ──
+        # ── Classify matches & compute pure question similarity ──
         matches = []
         best_score = None
+        best_pure_score = None
         is_duplicate = False
+        needs_verification = False
 
-        for r in results:
-            score = r.pop("score", 0.0)
-            dup = score >= self.threshold
-            if dup:
-                is_duplicate = True
-            if best_score is None or score > best_score:
-                best_score = score
-            matches.append({**r, "score": score, "is_duplicate": dup})
+        if results:
+            existing_questions = [r.get("question", "") for r in results]
+            q_vec = self.model.encode(question)
+            ex_vecs = self.model.encode(existing_questions)
+
+            q_norm = np.linalg.norm(q_vec)
+            ex_norms = np.linalg.norm(ex_vecs, axis=1)
+            dot_prods = np.dot(ex_vecs, q_vec)
+            pure_scores = dot_prods / (q_norm * ex_norms + 1e-9)
+
+            for i, r in enumerate(results):
+                score = r.pop("score", 0.0)
+                pure_score = float(pure_scores[i])
+
+                # Definite duplicate: only if the actual question wording is >= 0.93 identical
+                is_dup = pure_score >= PURE_DUP_THRESHOLD
+
+                # Needs Gemini verification: pure question similarity is moderately high (>= 0.78)
+                # and Atlas vector score also flagged it (>= threshold)
+                verify = (pure_score >= PURE_VERIFY_THRESHOLD) and (score >= self.threshold) and not is_dup
+
+                if is_dup:
+                    is_duplicate = True
+                if verify:
+                    needs_verification = True
+
+                if best_score is None or score > best_score:
+                    best_score = score
+                if best_pure_score is None or pure_score > best_pure_score:
+                    best_pure_score = pure_score
+
+                matches.append({
+                    **r,
+                    "score": score,
+                    "pure_score": pure_score,
+                    "is_duplicate": is_dup,
+                    "needs_verification": verify,
+                })
 
         return {
             "query": question,
             "threshold": self.threshold,
             "is_duplicate": is_duplicate,
+            "needs_verification": needs_verification,
             "best_score": best_score,
+            "best_pure_score": best_pure_score,
             "matches": matches,
         }

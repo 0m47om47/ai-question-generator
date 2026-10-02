@@ -12,84 +12,78 @@ from typing import Optional
 from tavily import TavilyClient
 
 
-# Topic variety hints to avoid repetitive searches
+# Topic variety hints for engaging, accessible quiz questions (not obscure census/academic trivia)
 _CITY_TOPICS = [
-    "historical events",
-    "notable people from",
-    "local festivals and traditions in",
-    "local cuisine and food specialties of",
-    "wildlife and nature near",
-    "educational institutions in",
-    "architecture and monuments in",
-    "local industries and economy of",
-    "geography and rivers near",
-    "transportation and infrastructure in",
-    "cultural heritage of",
-    "sports and recreation in",
-    "lesser-known facts about",
-    "recent developments in",
-    "demographics and communities of",
-    "temples and religious sites in",
-    "art and craft traditions of",
-    "local markets and trade in",
+    "famous tourist attractions and landmarks in",
+    "famous local food, dishes and sweets of",
+    "popular festivals and cultural celebrations in",
+    "famous temples, monuments and heritage sites in",
+    "popular sports, parks and recreational places in",
+    "interesting stories, history and nicknames of",
+    "famous handicrafts, arts and specialties of",
+    "prominent personalities, leaders and artists from",
+    "famous natural spots, hills, lakes and waterfalls near",
+    "popular markets and shopping areas in",
+    "fun and interesting facts about",
+    "major educational institutions and universities in",
 ]
 
 _CATEGORY_TOPICS = {
     "General Knowledge": [
-        "unusual world records",
-        "surprising scientific discoveries",
-        "lesser-known inventions",
-        "unusual geographic facts",
-        "unique cultural traditions worldwide",
-        "interesting economic facts",
+        "famous world landmarks and wonders",
+        "popular world records and achievements",
+        "famous currencies and flags of countries",
+        "interesting world traditions and customs",
+        "famous awards and honors like Nobel or Oscars",
+        "well-known global organizations and capitals",
     ],
     "Geography": [
-        "unusual landforms",
-        "lesser-known rivers and lakes",
-        "unique climate phenomena",
-        "remote islands and territories",
-        "geographical boundaries and borders",
-        "ocean floor features",
+        "famous mountain peaks, ranges and volcanoes",
+        "well-known rivers, oceans and waterfalls",
+        "world deserts, forests and national parks",
+        "famous world capitals and major cities",
+        "distinctive geographical landmarks and continents",
+        "well-known islands, beaches and straits",
     ],
     "History": [
-        "lesser-known ancient civilizations",
-        "unusual historical events",
-        "forgotten historical figures",
-        "historical discoveries and excavations",
-        "unusual wars and conflicts",
-        "historical trade routes",
+        "famous ancient monuments and civilizations",
+        "major historical events and independence movements",
+        "famous rulers, kings and world leaders",
+        "historic battles and turning points",
+        "historic explorers and inventions in history",
+        "world heritage sites and architectural wonders",
     ],
     "Science": [
-        "unusual chemical elements properties",
-        "lesser-known biological phenomena",
-        "space exploration discoveries",
-        "unusual physics concepts",
-        "medical science breakthroughs",
-        "environmental science facts",
+        "everyday science facts and common phenomena",
+        "famous inventions and their inventors",
+        "solar system, planets and space missions",
+        "fascinating animal and plant facts",
+        "human body and health basics",
+        "famous scientists and their discoveries",
     ],
     "Sports": [
-        "unusual sports rules and records",
-        "lesser-known Olympic events",
-        "sports history milestones",
-        "unusual sports venues",
-        "lesser-known sports worldwide",
-        "sports technology innovations",
+        "Cricket World Cup and IPL records and legends",
+        "Olympic Games famous moments and medalists",
+        "Football (soccer) legends and tournaments",
+        "popular Indian sports personalities and trophies",
+        "Badminton, Tennis and Grand Slam champions",
+        "famous sports rules, terms and stadiums",
     ],
     "TV": [
-        "Indian television show trivia",
-        "behind-the-scenes TV facts",
-        "TV show records and milestones",
-        "lesser-known TV show facts",
-        "iconic TV moments",
-        "TV industry innovations",
+        "iconic Indian TV serials and sitcoms",
+        "popular reality shows and game shows",
+        "famous cartoon shows and childhood classics",
+        "popular TV actors and character names",
+        "classic TV show catchphrases and theme songs",
+        "award-winning TV shows and milestones",
     ],
     "Technology": [
-        "lesser-known tech inventions",
-        "cybersecurity milestones",
-        "unusual programming language facts",
-        "AI and machine learning history",
-        "internet history milestones",
-        "space technology innovations",
+        "popular social media apps and tech founders",
+        "smartphone history and popular gadgets",
+        "well-known computer terms and internet milestones",
+        "famous video games and gaming consoles",
+        "everyday AI and digital innovations",
+        "pioneering tech companies and their products",
     ],
 }
 
@@ -120,25 +114,36 @@ def research_slots(
     slots: list[tuple[str, str]],
     rejected_topics: dict[tuple[str, str], list[str]] | None = None,
     used_search_topics: dict[tuple[str, str], list[str]] | None = None,
+    cities_only: bool = True,
 ) -> dict[tuple[str, str], str]:
     """
-    Research facts for all pending slots using Tavily Search.
+    Research facts for pending slots using Tavily Search.
 
     Args:
         slots:              List of (slot_type, slot_value) to research.
         rejected_topics:    Previously rejected question texts per slot.
         used_search_topics: Track which topic hints were already used per slot.
+        cities_only:        If True (default), only research city slots and skip
+                            standard categories (GK, Science, TV, etc.) where
+                            Gemini already possesses comprehensive knowledge.
 
     Returns:
         Dict mapping (slot_type, slot_value) → research context string.
         Slots that fail research will be absent from the result.
     """
+    target_slots = [
+        (stype, sval) for stype, sval in slots
+        if (not cities_only or stype == "city")
+    ]
+    if not target_slots:
+        return {}
+
     client = _get_client()
     results: dict[tuple[str, str], str] = {}
     if used_search_topics is None:
         used_search_topics = {}
 
-    for slot_type, slot_value in slots:
+    for slot_type, slot_value in target_slots:
         # Pick a diverse topic angle
         used = used_search_topics.get((slot_type, slot_value), [])
         topic_hint = _pick_topic_hint(slot_type, slot_value, used)

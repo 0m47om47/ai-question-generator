@@ -5,6 +5,11 @@ using Gemini with structured JSON output.
 Integrates Tavily research context when available for more diverse,
 factually grounded questions. ONE LLM call per game (ideal case).
 Follow-up calls only for missing / rejected / duplicate slots.
+
+Resilience features:
+- Model fallback chain (tries alternate models on 503/404)
+- Dedicated retry loop for verification calls
+- _is_model_error() skips dead models instead of aborting
 """
 
 import json
@@ -15,9 +20,12 @@ from typing import Optional
 from google import genai
 from google.genai import types
 
-
-# Exponential backoff delays for 503 / transient errors
-_BACKOFF_DELAYS = [5, 15, 30]
+from config import (
+    GEMINI_MODEL,
+    GEMINI_FALLBACK_MODELS,
+    VERIFICATION_RETRIES,
+    VERIFICATION_RETRY_DELAY,
+)
 
 
 def _get_client() -> genai.Client:
@@ -30,6 +38,74 @@ def _get_client() -> genai.Client:
             timeout=120_000,   # 120 seconds max per request (milliseconds)
         ),
     )
+
+
+def _is_transient_error(err_str: str) -> bool:
+    """Check if an error string indicates a transient (retryable) error."""
+    return any(k in err_str for k in (
+        "503", "UNAVAILABLE", "timeout", "Timeout", "ReadTimeout",
+        "429", "RESOURCE_EXHAUSTED",
+    ))
+
+
+def _is_model_error(err_str: str) -> bool:
+    """Check if the error is model-specific (404 not found, deprecated, etc.).
+    These errors mean THIS model won't work but another model might."""
+    return any(k in err_str for k in (
+        "404", "NOT_FOUND", "no longer available", "deprecated",
+        "not supported", "does not exist",
+    ))
+
+
+def _call_gemini(
+    client: genai.Client,
+    model_name: str,
+    prompt: str,
+    temperature: float = 1.0,
+) -> tuple[list[dict] | None, str | None]:
+    """
+    Make a single Gemini call and parse the JSON response.
+
+    Returns:
+        (parsed_list, None)   on success
+        (None, "503")         on transient error (retry / try next model)
+        (None, "model_error") on model-specific error (skip to next model)
+        (None, error_msg)     on permanent error (stop trying)
+    """
+    try:
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=temperature,
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                    disable=True,
+                ),
+            ),
+        )
+        raw = response.text.strip()
+        parsed = json.loads(raw)
+
+        if isinstance(parsed, dict):
+            parsed = [parsed]
+
+        if not isinstance(parsed, list):
+            return None, f"Unexpected type: {type(parsed)}"
+
+        return parsed, None
+
+    except json.JSONDecodeError as e:
+        return None, f"JSON parse error: {e}"
+    except (TimeoutError, ConnectionError, OSError) as e:
+        return None, "503"
+    except Exception as e:
+        err_str = str(e)
+        if _is_transient_error(err_str):
+            return None, "503"
+        if _is_model_error(err_str):
+            return None, "model_error"
+        return None, f"API error: {e}"
 
 
 # ── Prompt helpers ──────────────────────────────────────────────────
@@ -77,6 +153,25 @@ def _research_block(research_context: dict[tuple[str, str], str],
     return ""
 
 
+_DIFFICULTY_GUIDELINES = """
+QUESTION DIFFICULTY & QUALITY (CRITICAL):
+- Target Audience: General quiz players, students, and casual gaming enthusiasts.
+- Difficulty Level: Moderate, engaging, and fun (NOT obscure, academic, or PhD-level).
+- Language: Natural, conversational, and direct (1-2 sentences maximum).
+- STRICTLY DO NOT ASK:
+  * Obscure census statistics (population density numbers, demographic decimals, exact census percentages).
+  * Minor administrative bodies, micro-regulations, or obscure technical codes.
+  * Overly academic or dry textbook jargon (e.g. niche scientific cellular pathways, obscure treaties).
+- FOCUS ON:
+  * Famous and beloved landmarks, tourist spots, hills, lakes, and monuments.
+  * Renowned local dishes, sweets, snacks, and culinary specialties.
+  * Popular festivals, cultural celebrations, and folk traditions.
+  * Inspiring historical figures, legends, freedom fighters, and famous achievements.
+  * Popular sports moments, everyday science, iconic TV/cinema, and major tech innovations.
+  * Engaging facts that players find enjoyable and rewarding to answer!
+"""
+
+
 # ── Quiz prompt ─────────────────────────────────────────────────────
 
 def _build_quiz_prompt(
@@ -87,7 +182,6 @@ def _build_quiz_prompt(
 ) -> str:
     existing_block = ""
     if existing_questions:
-        # Show up to 80 existing questions for better dedup
         sample = existing_questions[:80]
         existing_block = (
             "\n\nEXISTING QUESTIONS (do NOT repeat, paraphrase, reword, or use the same underlying fact):\n"
@@ -102,11 +196,12 @@ def _build_quiz_prompt(
 SLOTS TO FILL:
 {_slots_description(slots)}
 {research_block}
+{_DIFFICULTY_GUIDELINES}
 CRITICAL DIVERSITY RULES:
 - Generate EXACTLY one question per slot.
-- Every question must test a GENUINELY DIFFERENT fact, event, person, place, concept, or statistic.
-- For CITY slots: use a lesser-known or surprising fact about that city. Do NOT ask about the most famous landmark, river, or industry that is likely already covered. Explore local culture, festivals, cuisine, wildlife, transportation, education, demographics, lesser-known places, or unique traditions.
-- For CATEGORY slots: vary the specific sub-topic within the category. If Science, don't always ask about physics — try chemistry, biology, astronomy, earth science, etc. If History, don't always ask about the same era or country.
+- Every question must test a GENUINELY DIFFERENT fact, event, person, place, concept, or statistic from existing questions.
+- For CITY slots: Focus on cultural heritage, famous temples/sites, local delicacies/sweets, notable geographic spots (lakes/hills), or celebrated local legends. Do NOT ask for census numbers or dry statistics.
+- For CATEGORY slots: Vary the specific sub-topic. Keep questions interesting, relatable, and educational without being dry or obscure.
 - If web research context is provided above, USE IT to create the question. Do not ignore the research.
 - Do NOT reuse the same core fact with different wording or options.
 - Do NOT change only the options while keeping the same question concept.
@@ -151,10 +246,11 @@ def _build_this_that_prompt(
 SLOTS TO FILL:
 {_slots_description(slots)}
 {research_block}
+{_DIFFICULTY_GUIDELINES}
 CRITICAL DIVERSITY RULES:
 - Generate EXACTLY one question per slot.
 - Every question must test a GENUINELY DIFFERENT fact from any existing question.
-- For CITY slots: use lesser-known facts. Explore culture, festivals, cuisine, wildlife, transport, education, demographics, traditions.
+- For CITY slots: Focus on cultural heritage, famous temples/sites, local delicacies/sweets, notable geographic spots (lakes/hills), or celebrated local legends. Do NOT ask for census numbers or dry statistics.
 - For CATEGORY slots: vary the specific sub-topic within the category.
 - If web research context is provided above, USE IT to create the question.
 - Do NOT reuse the same core fact with different wording.
@@ -200,11 +296,12 @@ def _build_guess_number_prompt(
 SLOTS TO FILL:
 {_slots_description(slots)}
 {research_block}
+{_DIFFICULTY_GUIDELINES}
 CRITICAL DIVERSITY RULES:
 - Generate EXACTLY one question per slot.
 - Every question must test a GENUINELY DIFFERENT numerical fact.
-- For CITY slots: use diverse numerical facts — population, area, founding year, number of schools, distance to another city, elevation, number of wards, etc.
-- For CATEGORY slots: vary the specific sub-topic.
+- For CITY slots: use engaging and recognizable numbers — founding or historical year, elevation in meters/feet, distance to a major city in km, number of major hills/lakes/platforms. NEVER ask for obscure census decimals or population densities.
+- For CATEGORY slots: vary the specific sub-topic. Use memorable numbers (e.g. sports championship years, space mission years, world record counts).
 - If web research context is provided above, USE IT to create the question.
 - Do NOT reuse the same core fact with different wording.
 - Each question asks about a number, year, count, distance, or quantity.
@@ -249,10 +346,11 @@ def _build_wrong_answer_prompt(
 SLOTS TO FILL:
 {_slots_description(slots)}
 {research_block}
+{_DIFFICULTY_GUIDELINES}
 CRITICAL DIVERSITY RULES:
 - Generate EXACTLY one question per slot.
 - Every question must test a GENUINELY DIFFERENT fact from any existing question.
-- For CITY slots: use lesser-known facts. Explore culture, festivals, cuisine, wildlife, transport, education, demographics, traditions.
+- For CITY slots: Focus on cultural heritage, famous temples/sites, local delicacies/sweets, notable geographic spots (lakes/hills), or celebrated local legends. Do NOT ask for census numbers or dry statistics.
 - For CATEGORY slots: vary the specific sub-topic within the category.
 - If web research context is provided above, USE IT to create the question.
 - Do NOT reuse the same core fact with different wording.
@@ -289,18 +387,13 @@ def generate_batch(
     existing_questions: list[str] | None = None,
     rejected_topics: dict[tuple[str, str], list[str]] | None = None,
     research_context: dict[tuple[str, str], str] | None = None,
-    model_name: str = "gemini-3.6-flash",
+    model_name: str = GEMINI_MODEL,
 ) -> list[dict] | None:
     """
     Generate questions for all given slots in ONE LLM call.
 
-    Args:
-        game:               Game type key.
-        slots:              List of (slot_type, slot_value) tuples to fill.
-        existing_questions: Question texts already in the DB (for dedup guidance).
-        rejected_topics:    Map of slot → list of rejected question texts.
-        research_context:   Tavily research results per slot.
-        model_name:         Gemini model to use.
+    Uses a model fallback chain: if the primary model returns 503 or 404,
+    tries alternate models before giving up.
 
     Returns:
         Parsed list of dicts from Gemini, or None on failure.
@@ -313,44 +406,146 @@ def generate_batch(
     prompt = builder(slots, existing_questions or [], rejected_topics, research_context)
     client = _get_client()
 
-    try:
-        response = client.models.generate_content(
-            model=model_name,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=1.0,
-                automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                    disable=True,
-                ),
-            ),
-        )
-        raw = response.text.strip()
-        parsed = json.loads(raw)
+    # Build the model chain: primary model first, then fallbacks (deduped)
+    models_to_try = [model_name]
+    for m in GEMINI_FALLBACK_MODELS:
+        if m not in models_to_try:
+            models_to_try.append(m)
 
-        if isinstance(parsed, dict):
-            parsed = [parsed]
+    last_error = None
+    for model in models_to_try:
+        result, error = _call_gemini(client, model, prompt, temperature=1.0)
 
-        if not isinstance(parsed, list):
-            print(f"    ✗ Gemini returned unexpected type: {type(parsed)}")
+        if result is not None:
+            if model != model_name:
+                print(f"    ℹ Succeeded with fallback model: {model}")
+            return result
+
+        if error == "503":
+            print(f"    ✗ {model} → 503/overloaded, trying next …")
+            last_error = "503"
+            continue
+        elif error == "model_error":
+            print(f"    ✗ {model} → model unavailable, trying next …")
+            last_error = last_error or "model_error"
+            continue
+        else:
+            # Truly permanent error (e.g. bad JSON from a successful response)
+            print(f"    ✗ {model} → {error}")
             return None
 
-        return parsed
+    # All models exhausted
+    if last_error == "503":
+        print(f"    ✗ All {len(models_to_try)} models returned 503")
+        return "503"
+    print(f"    ✗ All {len(models_to_try)} models failed")
+    return None
 
-    except json.JSONDecodeError as e:
-        print(f"    ✗ JSON parse error: {e}")
-        return None
-    except (TimeoutError, ConnectionError, OSError) as e:
-        print(f"    ✗ Timeout/connection error: {str(e)[:100]}")
-        return "503"  # treat as transient
-    except Exception as e:
-        err_str = str(e)
-        if any(k in err_str for k in ("503", "UNAVAILABLE", "timeout", "Timeout", "ReadTimeout")):
-            print(f"    ✗ Gemini 503/timeout: {err_str[:120]}")
-            return "503"
-        if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-            print(f"    ✗ Gemini 429 (rate limit): {err_str[:120]}")
-            return "503"
-        print(f"    ✗ Gemini API error: {e}")
-        return None
 
+def verify_duplicates_batch(
+    candidates: list[dict],
+    model_name: str = GEMINI_MODEL,
+) -> dict[int, bool] | None:
+    """
+    Batch-verify potential duplicates with ONE Gemini call.
+
+    Includes:
+    - Model fallback chain (tries alternate models on 503/404)
+    - Dedicated retry loop with backoff before giving up
+
+    Returns:
+        Dict mapping candidate index → True (duplicate) / False (unique).
+        Returns None on permanent failure, or "503" on transient failure.
+    """
+    if not candidates:
+        return {}
+
+    # ── Build prompt ────────────────────────────────────────────────
+    pair_lines = []
+    for i, c in enumerate(candidates):
+        pair_lines.append(
+            f"  {i+1}. NEW: \"{c['new_question']}\"\n"
+            f"     EXISTING: \"{c['existing_question']}\"\n"
+            f"     SIMILARITY: {c['score']:.3f}"
+        )
+    pairs_block = "\n".join(pair_lines)
+
+    prompt = f"""You are a duplicate-detection judge for quiz questions.
+
+For each numbered pair below, decide whether the NEW question tests the
+**same underlying fact** as the EXISTING question.
+
+- If the core fact, answer, and intent are the same (even if worded differently),
+  respond "DUPLICATE".
+- If they test genuinely different facts, topics, or aspects — even if they
+  share a city name, category, or some vocabulary — respond "UNIQUE".
+
+PAIRS TO EVALUATE:
+{pairs_block}
+
+Respond with a JSON array of objects, one per pair, in order:
+[
+  {{"pair": 1, "verdict": "DUPLICATE" or "UNIQUE"}},
+  {{"pair": 2, "verdict": "DUPLICATE" or "UNIQUE"}},
+  ...
+]
+
+Return ONLY the JSON array, nothing else."""
+
+    client = _get_client()
+
+    # Build the model chain
+    models_to_try = [model_name]
+    for m in GEMINI_FALLBACK_MODELS:
+        if m not in models_to_try:
+            models_to_try.append(m)
+
+    # Retry loop: try each model, then retry with backoff
+    for retry in range(VERIFICATION_RETRIES + 1):
+        for model in models_to_try:
+            result, error = _call_gemini(client, model, prompt, temperature=0.0)
+
+            if result is not None:
+                if model != model_name:
+                    print(f"    ℹ Verification succeeded with fallback: {model}")
+                return _parse_verification_verdicts(result, candidates)
+
+            if error == "503":
+                print(f"    ✗ Verification: {model} → 503/overloaded")
+                continue
+            elif error == "model_error":
+                print(f"    ✗ Verification: {model} → model unavailable")
+                continue
+            else:
+                print(f"    ✗ Verification: {model} → {error}")
+                return None
+
+        # All models failed this round — backoff before next retry
+        if retry < VERIFICATION_RETRIES:
+            print(f"    ⏳ Verification retry {retry+1}/{VERIFICATION_RETRIES} in {VERIFICATION_RETRY_DELAY}s …")
+            time.sleep(VERIFICATION_RETRY_DELAY)
+
+    # All retries exhausted
+    print(f"    ✗ Verification failed after {VERIFICATION_RETRIES + 1} rounds × {len(models_to_try)} models")
+    return "503"
+
+
+def _parse_verification_verdicts(
+    parsed: list[dict],
+    candidates: list[dict],
+) -> dict[int, bool]:
+    """Parse Gemini's verification response into candidate index → is_duplicate map."""
+    results: dict[int, bool] = {}
+    for entry in parsed:
+        pair_num = entry.get("pair", 0)
+        verdict = str(entry.get("verdict", "")).upper().strip()
+        if 1 <= pair_num <= len(candidates):
+            candidate_idx = candidates[pair_num - 1]["index"]
+            results[candidate_idx] = (verdict == "DUPLICATE")
+
+    # Fill in any missing candidates as DUPLICATE (safe default)
+    for c in candidates:
+        if c["index"] not in results:
+            results[c["index"]] = True
+
+    return results
