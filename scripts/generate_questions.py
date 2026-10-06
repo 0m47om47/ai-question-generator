@@ -149,11 +149,11 @@ def run_pipeline(
         print(f"\n  Existing questions in DB: {len(existing_qtexts)}")
 
         # ── 2-Part Generation Strategy ──
-        # Part 1: 10 Cities (targeted Tavily web search for local grounding)
-        # Part 2: 7 Categories (zero web search; Gemini internal knowledge)
+        # Part 1: 10 Cities (targeted You.com web search for local grounding)
+        # Part 2: 7 Categories (targeted You.com web search for factual grounding)
         slot_parts = [
             ("Part 1: Cities", list(CITY_SLOTS), True),
-            ("Part 2: Categories", list(CATEGORY_SLOTS), False),
+            ("Part 2: Categories", list(CATEGORY_SLOTS), True),
         ]
 
         next_id = get_next_question_id(db, col_name)
@@ -163,7 +163,7 @@ def run_pipeline(
         accepted_embeddings = []       # (embedding_vector, question_text)
         accepted_game_docs = []        # collected in memory, saved as ONE doc at end
         rejected_topics: dict[tuple[str, str], list[str]] = {}  # slot → rejected texts
-        used_search_topics: dict[tuple[str, str], list[str]] = {}  # track Tavily topic diversity
+        used_search_topics: dict[tuple[str, str], list[str]] = {}  # track web search topic diversity
         last_valid_fallback: dict[tuple[str, str], dict] = {}  # slot → valid generated question to rescue if retries exhaust
         request_num = 0
 
@@ -187,20 +187,20 @@ def run_pipeline(
 
                 is_final_attempt = (attempt == MAX_DUPLICATE_RETRIES)
 
-                # ── Step 1: Tavily Research (Cities only, skipped for categories) ──
+                # ── Step 1: You.com Research (Cities & Categories) ──
                 research_context = {}
                 if do_research:
-                    print(f"\n  ── Tavily Research ──")
+                    print(f"\n  ── You.com Research ──")
                     research_context = research_slots(
                         slots=pending_slots,
                         rejected_topics=rejected_topics,
                         used_search_topics=used_search_topics,
-                        cities_only=True,
+                        cities_only=False,
                     )
                     researched_count = len(research_context)
                     print(f"  Researched: {researched_count}/{len(pending_slots)} slots")
                 else:
-                    print(f"  ⚡ Web research skipped (using Gemini direct knowledge for {part_name})")
+                    print(f"  ⚡ Web research skipped for {part_name}")
 
                 # ── Step 2: Gemini Generation ──
                 print(f"\n  ── Gemini Generation ({len(pending_slots)} questions) ──")

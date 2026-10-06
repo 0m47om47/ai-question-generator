@@ -2,7 +2,7 @@
 AI Question Generator — batch-generates questions for missing slots
 using Gemini with structured JSON output.
 
-Integrates Tavily research context when available for more diverse,
+Integrates web research context when available for more diverse,
 factually grounded questions. ONE LLM call per game (ideal case).
 Follow-up calls only for missing / rejected / duplicate slots.
 
@@ -138,7 +138,7 @@ def _rejected_block(rejected_topics: dict[tuple[str, str], list[str]],
 
 def _research_block(research_context: dict[tuple[str, str], str],
                      slots: list[tuple[str, str]]) -> str:
-    """Build a prompt section with Tavily research context per slot."""
+    """Build a prompt section with web research context per slot."""
     lines = []
     for slot in slots:
         context = research_context.get(slot)

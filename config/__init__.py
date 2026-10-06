@@ -74,5 +74,5 @@ VERIFICATION_503_SCORE_THRESHOLD = 0.93
 VERIFICATION_RETRIES = 2
 VERIFICATION_RETRY_DELAY = 10      # seconds between verification retries
 
-# Max parallel Tavily searches
-TAVILY_MAX_WORKERS = 6
+# Max parallel You.com searches
+YOU_MAX_WORKERS = 6
