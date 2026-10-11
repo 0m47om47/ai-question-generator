@@ -308,15 +308,23 @@ CRITICAL DIVERSITY RULES:
 - Each question has exactly 4 options (as strings) and 1 correct answer.
 - The answer must exactly match one of the 4 options.
 - All questions must be factually accurate.
+
+⚠️ ABSOLUTE RULE — NUMERIC OPTIONS ONLY:
+- EVERY option MUST be a pure number (digits only). Examples: "1947", "342", "8848", "12".
+- Options must NEVER contain words, letters, phrases, units, or text of any kind.
+- WRONG examples: "Mount Everest", "New Delhi", "About 500", "~200", "500 km", "Three".
+- RIGHT examples: "1947", "500", "8848", "12", "2023", "365".
+- The "answer" field must also be a pure number matching one of the 4 numeric options.
+- If you generate ANY option that is not purely digits, the response will be REJECTED.
 {existing_block}
 {rejected_block}
 Respond with a JSON array. Each element:
 {{
   "slot_type": "city" or "category",
   "slot_value": "the city name or category name",
-  "question": "...",
-  "options": ["100", "200", "300", "400"],
-  "answer": "one of the options"
+  "question": "In which year was the Taj Mahal completed?",
+  "options": ["1648", "1653", "1670", "1632"],
+  "answer": "1653"
 }}
 
 Return ONLY the JSON array, nothing else."""

@@ -136,8 +136,21 @@ def _validate_guess_number(d: dict) -> Tuple[bool, str]:
         return False, f"Need 4 options, got {len(opts) if isinstance(opts, list) else 'N/A'}"
     if not all(isinstance(o, str) and o.strip() for o in opts):
         return False, "All options must be non-empty strings"
+    # ── Guess-the-Number: options MUST be purely numeric ──
+    for i, o in enumerate(opts):
+        # Strip commas, periods, and spaces (e.g. "1,000" or "8,848.86")
+        cleaned = o.strip().replace(",", "").replace(".", "").replace(" ", "")
+        if not cleaned.isdigit():
+            return False, (
+                f"Option {i+1} ('{o}') is not a number. "
+                f"Guess the Number options must be pure numbers (digits only)."
+            )
     if ans not in opts:
         return False, f"Answer '{ans}' not in options"
+    # Also verify answer itself is numeric
+    ans_cleaned = ans.strip().replace(",", "").replace(".", "").replace(" ", "")
+    if not ans_cleaned.isdigit():
+        return False, f"Answer '{ans}' is not a number. Must be digits only."
     return True, ""
 
 
