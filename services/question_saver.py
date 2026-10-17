@@ -6,7 +6,7 @@ Batch mode: all accepted questions go into ONE game-collection document.
 Each question still gets its own embedding record for vector search.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sentence_transformers import SentenceTransformer
 
@@ -79,7 +79,7 @@ def save_questions_batch(
         return {"game_doc_id": None, "embedding_doc_ids": [], "count": 0}
 
     collection_name = GAME_COLLECTION_MAP[game]
-    now = datetime.now(timezone.utc).isoformat()
+    now = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
 
     # ── 1. Insert ONE document with all questions ──
     game_insert = {
